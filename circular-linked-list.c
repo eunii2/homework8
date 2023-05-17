@@ -1,6 +1,5 @@
 #include<stdio.h>
 #include<stdlib.h>
-/* 필요한 헤더파일 추가 */
 
 typedef struct Node {
 	int key;
@@ -8,7 +7,6 @@ typedef struct Node {
 	struct Node* rlink;
 } listNode;
 
-/* 함수 리스트 */
 int initialize(listNode** h);
 int freeList(listNode* h);
 int insertLast(listNode* h, int key);
@@ -23,9 +21,10 @@ int deleteNode(listNode* h, int key);
 void printList(listNode* h);
 
 
-
 int main()
-{
+{	
+	printf("[----- [Choi Gaeun] [2022078054] -----]");
+
 	char command;
 	int key;
 	listNode* headnode=NULL;
@@ -110,10 +109,20 @@ int initialize(listNode** h) {
 
 /* 메모리 해제 */
 int freeList(listNode* h){
-
+	if(h->rlink==h){
+		free(h);
+		return 0;
+	}
+	listNode* p = h->rlink;
+	listNode* prev = NULL;
+	while(p != NULL && p != h){
+		prev = p;
+		p = p->rlink;
+		free(prev);
+	}
+	free(h);
 	return 0;
 }
-
 
 
 void printList(listNode* h) {
@@ -153,12 +162,28 @@ void printList(listNode* h) {
 }
 
 
-
 /**
  * list에 key에 대한 노드하나를 추가
  */
 int insertLast(listNode* h, int key) {
+	if(h==NULL) return -1;
 
+	listNode* node = (listNode*)malloc(sizeof(listNode));
+	node->key = key;
+	node->rlink = NULL;
+	node->llink = NULL;
+
+	if(h->rlink == h){
+		h->rlink = node;
+		h->llink = node;
+		node->rlink = h;
+		node->llink = h;
+	}else{
+		h->llink->rlink = node;
+		node->llink = h->llink;
+		h->llink = node;
+		node->rlink = h;
+	}
 	return 1;
 }
 
@@ -167,7 +192,16 @@ int insertLast(listNode* h, int key) {
  * list의 마지막 노드 삭제
  */
 int deleteLast(listNode* h) {
+	if(h->llink == h || h == NULL){
+		printf("nothing to delete.\n");
+		return 1;
+	}
+	listNode* remove = h->llink;
 
+	remove->llink->rlink = h;
+	h->llink = remove->llink;
+
+	free(remove);
 
 	return 1;
 }
@@ -177,19 +211,33 @@ int deleteLast(listNode* h) {
  * list 처음에 key에 대한 노드하나를 추가
  */
 int insertFirst(listNode* h, int key) {
-
+	listNode* node = (listNode*)malloc(sizeof(listNode));
+	node->key = key;
+	node->rlink = NULL;
+	node->llink = NULL;
+	node->rlink = h->rlink;
+	h->rlink->llink = node;
+	node->llink = h;
+	h->rlink = node;
 
 	return 1;
-}
+} 
+
 
 /**
  * list의 첫번째 노드 삭제
  */
 int deleteFirst(listNode* h) {
-
+	if (h == NULL || h->rlink == h)	{
+		printf("nothing to delete.\n");
+		return 0;
+	}
+	listNode* remove = h->rlink;
+	remove->rlink->llink = h;
+	h->rlink = remove->rlink;
+	free(remove);
 
 	return 1;
-
 }
 
 
@@ -197,15 +245,58 @@ int deleteFirst(listNode* h) {
  * 리스트의 링크를 역순으로 재 배치
  */
 int invertList(listNode* h) {
+	if(h->rlink == h || h == NULL) {
+		printf("nothing to invert...\n");
+		return 0;
+	}
+	listNode *n = h->rlink;
+	listNode *middle = h;
+	listNode *trail = h;
 
+	h->llink = h->rlink;
+
+	while(n != NULL && n != h){
+		trail = middle; 
+		middle = n;
+		n = n->rlink;
+		middle->rlink = trail;
+		middle->llink = n;
+	}
+	h->rlink = middle;
 
 	return 0;
 }
 
 
-
 /* 리스트를 검색하여, 입력받은 key보다 큰값이 나오는 노드 바로 앞에 삽입 */
 int insertNode(listNode* h, int key) {
+	if(h == NULL) return -1;
+
+	listNode* node = (listNode*)malloc(sizeof(listNode));
+	node->key = key;
+	node->llink = node->rlink = NULL;
+
+	if (h->rlink == h) {
+		insertFirst(h, key);
+		return 1;
+	}
+	listNode* n = h->rlink;
+
+	while(n != NULL && n != h) {
+		if(n->key >= key) {
+			if(n == h->rlink) {
+				insertFirst(h, key);
+			} else {
+				node->rlink = n;
+				node->llink = n->llink;
+				n->llink->rlink = node;
+				n->llink = node;
+			}
+			return 0;
+		}
+		n = n->rlink;
+	}
+	insertLast(h, key);
 
 	return 0;
 }
@@ -215,6 +306,27 @@ int insertNode(listNode* h, int key) {
  * list에서 key에 대한 노드 삭제
  */
 int deleteNode(listNode* h, int key) {
+	if (h->rlink == h || h == NULL)	{
+		printf("nothing to delete.\n");
+		return 0;
+	}
+	listNode* n = h->rlink;
+	while(n != NULL && n != h) {
+		if(n->key == key) {
+			if(n == h->rlink) {
+				deleteFirst(h); 
+			} else if (n->rlink == h){
+				deleteLast(h);
+			} else {
+				n->llink->rlink = n->rlink;
+				n->rlink->llink = n->llink;
+				free(n);
+			}
+			return 0;
+		}
+		n = n->rlink;
+	}
+	printf("cannot find the node for key = %d\n", key);
 
 	return 0;
 }
